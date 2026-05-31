@@ -35,6 +35,7 @@ export class SSEWriter {
   }
   
   // 前端根据type类型处理渲染
+  //  注意：sessionId在前端中没有用到！！！
   sendThinking(content: string): void {
     this._send({ type: 'thinking', content, sessionId: this._sessionId })
   }

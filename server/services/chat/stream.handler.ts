@@ -41,7 +41,8 @@ export function createSSEStreamWithTools(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   context: StreamContextWithTools
 ): ReadableStream {
-  // 解构上下文对象
+  // 解构上下文对象：
+  // sessionId：每条 SSE 事件都带上，前端用于关联请求
   const { messageId, conversationId, userId, sessionId, apiKey, model, contextMessages, enableThinking, thinkingBudget } = context
   // 必须把字符串转成 Uint8Array 才能塞进流里
 
@@ -119,6 +120,7 @@ export function createSSEStreamWithTools(
             thinkingBudget,
             tools: toolRegistry.getToolDefinitions(),
           })
+          // 当前流替换成下一轮请求的流
           currentReader = nextReader
         }
 
@@ -169,31 +171,36 @@ async function processAIResponseWithParallelTools(
     const { done, value } = await reader.read()
     if (done) break
 
+    // stream 参数设为 true，防止单个 UTF-8 字符（如中文）被截断导致乱码
     buffer += decoder.decode(value, { stream: true })
+    // 分割出以\n\n结尾的：每一个完整的消息事件必须以 \n\n（两个换行符）结尾
     const { lines, remaining } = splitSSEBuffer(buffer)
+    // 没有\n\n结尾继续缓存，下次字节流到达时拼接
     buffer = remaining
 
     for (const line of lines) {
+      // parseSSELine 把 "data: ..." 前缀去掉，拿到 JSON 字符串。
       const data = parseSSELine(line)
       if (!data) continue
 
       try {
         const parsed = JSON.parse(data)
+        // choices[0].delta 是 OpenAI API 的增量数据标准结构。
         const delta = parsed.choices?.[0]?.delta
 
-        // thinking
+        // 如果是思考内容 thinking
         if (delta?.reasoning_content) {
           thinkingContent += delta.reasoning_content
           writer.sendThinking(delta.reasoning_content)
         }
 
-        // answer
+        // 如果是回答内容 answer
         if (delta?.content) {
           answerContent += delta.content
           writer.sendAnswer(delta.content)
         }
 
-        // tool_calls（流式收集）
+        // 如果是工具调用 tool_calls（流式收集）
         if (delta?.tool_calls) {
           for (const tc of delta.tool_calls) {
             const idx = tc.index ?? 0

@@ -13,7 +13,12 @@ export type MessagePhase =
   | 'error'         // 错误
 
 /** 工具状态 */
-export type ToolState = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+export type ToolState = 
+  | 'pending' 
+  | 'running' 
+  | 'completed' 
+  | 'failed' 
+  | 'cancelled'
 
 /** 工具调用信息 */
 export interface ActiveTool {

@@ -32,22 +32,26 @@ export function eventToPhase(event: PhaseEvent): MessagePhase {
 }
 
 /**
- * 计算下一个阶段
+ * 计算下一个阶段:
+ *  接收当前阶段 + 事件
  */
 export function getNextPhase(
   currentPhase: MessagePhase,
   event: PhaseEvent
 ): MessagePhase | null {
+  // 如果是工具调用事件，直接返回tool_calling阶段
   if (event.type === 'TOOL_COMPLETE' || event.type === 'TOOL_PROGRESS' || event.type === 'TOOL_CANCEL') {
     return currentPhase
   }
   
+  // eventToPhase()：通过event事件，映射到目标阶段
   const targetPhase = eventToPhase(event)
   
   if (currentPhase === targetPhase) {
     return targetPhase
   }
   
+  // 合法转换表，限定哪些状态能跳转到哪些状态
   if (VALID_TRANSITIONS[currentPhase].includes(targetPhase)) {
     return targetPhase
   }

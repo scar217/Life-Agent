@@ -23,7 +23,7 @@ export function createMarkdownComponents(
 
       // 检查是否是媒体块
       if (language && isMediaBlock(language)) {
-        // 禁用媒体块时，显示为普通代码块
+        // Thinking阶段：禁用媒体块时，显示为普通代码块
         if (disableMediaBlocks) {
           return (
             <CodeBlock inline={false} className={className}>
@@ -49,6 +49,7 @@ export function createMarkdownComponents(
           }
           return null // 过滤非本地图片
         }
+        
         const MediaComponent = mediaRegistry[language]
         const blockKey = `${language}-${content.slice(0, 50)}`
         return (

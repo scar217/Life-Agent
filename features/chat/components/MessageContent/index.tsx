@@ -44,16 +44,16 @@ function preprocessStreamingContent(content: string, isStreaming: boolean): stri
   if (!isStreaming || !content) return content
   
   // 统计代码块的开始和结束
-  const codeBlockPattern = /```/g
-  const matches = content.match(codeBlockPattern)
+  const codeBlockPattern = /```/g  // 正则表达式，匹配代码块```
+  const matches = content.match(codeBlockPattern) // 统计```的数量
   const count = matches?.length || 0
   
-  // 如果没有代码块或代码块数量是偶数（都闭合了），直接返回
+  // 如果没有代码块(```)或代码块(```)数量是偶数（都闭合了），直接返回
   if (count === 0 || count % 2 === 0) {
-    return content
+    return content  // 闭合了，正常渲染
   }
   
-  // 有未闭合的代码块
+  // 有未闭合的代码块：找到最后一个未闭合的代码块，识别语言
   const lastOpenBlock = content.lastIndexOf('```')
   const afterBlock = content.slice(lastOpenBlock + 3)
   const langMatch = afterBlock.match(/^(\w+)/)
@@ -64,8 +64,8 @@ function preprocessStreamingContent(content: string, isStreaming: boolean): stri
     const blockContent = afterBlock.slice(lang.length).trim()
     
     // 检查是否有完整的 JSON
-    const jsonStart = blockContent.indexOf('{')
-    const jsonEnd = blockContent.lastIndexOf('}')
+    const jsonStart = blockContent.indexOf('{') // 找JSON开始索引
+    const jsonEnd = blockContent.lastIndexOf('}') // 找JSON结束索引
     
     // JSON 不完整，隐藏整个代码块
     if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {

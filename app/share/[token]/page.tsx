@@ -87,6 +87,7 @@ export default async function SharePageSSR({
     thinking: string | null
     createdAt: Date
   }) => {
+    // 生成
     const [contentHtml, thinkingHtml] = await Promise.all([
       renderMarkdownToHtml(msg.content),
       msg.thinking ? renderMarkdownToHtml(msg.thinking) : Promise.resolve('')

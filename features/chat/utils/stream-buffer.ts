@@ -55,6 +55,8 @@ export class StreamBuffer {
    */
   private flush(): void {
     if (this.buffer) {
+      // 将目前的缓存内容发到onFlush方法处理
+      // 这里onFlush方法处理逻辑是追加字符到Store中
       this.onFlush(this.buffer)
       this.buffer = ''
     }

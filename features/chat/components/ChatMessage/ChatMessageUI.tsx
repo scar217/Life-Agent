@@ -420,14 +420,14 @@ export function ChatMessageUI({
   
   // ============ AI 消息 ============
 
-  // 根据 displayState 决定显示内容
+  // 根据 displayState 决定AI消息模块显示的内容
   const showWaitingIndicator = !isProcessing && !message.thinking && !message.content && message.displayState === 'waiting'
   const showErrorIndicator = (phase === 'error' || message.hasError) && !message.content
 
   return (
     <div className="w-full py-6">
         <div className="space-y-4">
-          {/* Waiting 状态：等待响应 */}
+          {/* Waiting 状态：显示等待响应 */}
           {showWaitingIndicator && (
             <div className="flex items-center gap-2 text-[hsl(var(--text-secondary))]">
               <Loader2 className="h-4 w-4 animate-spin" />

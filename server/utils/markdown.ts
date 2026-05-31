@@ -8,6 +8,7 @@ import html from 'remark-html'
 import { rehype } from 'rehype'
 import rehypeHighlight from 'rehype-highlight'
 
+// 图片渲染块
 function preprocessImageBlock(markdown: string): string {
   return markdown.replace(
     /```image\n([\s\S]*?)\n```/g,
@@ -30,6 +31,7 @@ function preprocessImageBlock(markdown: string): string {
   )
 }
 
+// 天气渲染块
 function preprocessWeatherBlock(markdown: string): string {
   return markdown.replace(
     /```weather\n([\s\S]*?)\n```/g,
@@ -63,6 +65,7 @@ function preprocessWeatherBlock(markdown: string): string {
   )
 }
 
+// 图表渲染块
 function preprocessChartBlock(markdown: string): string {
   return markdown.replace(
     /```chart\n([\s\S]*?)\n```/g,

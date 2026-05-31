@@ -11,14 +11,24 @@ import { fetchStockQuotes, type StockQuoteItem } from '@/server/services/tools/s
 
 const SILICONFLOW_API_URL = 'https://api.siliconflow.cn/v1/chat/completions'
 
+function getTimeOfDay(hour: number): string {
+  if (hour >= 5 && hour < 11) return '早晨'
+  if (hour >= 11 && hour < 13) return '中午'
+  if (hour >= 13 && hour < 18) return '下午'
+  if (hour >= 18 && hour < 22) return '晚上'
+  return '深夜'
+}
+
 // AI writes only a personalized greeting, not full HTML
 async function generateGreeting(
   apiKey: string,
   weatherData: string | null,
   newsCount: number,
-  newsTopics: string | null
+  newsTopics: string | null,
+  pushHour: number
 ): Promise<string> {
-  let prompt = `你是一个AI生活管家。请用2-3句话写一段亲切的晨间问候语（中文），内容包括：`
+  const timeOfDay = getTimeOfDay(pushHour)
+  let prompt = `你是一个AI生活管家。请用2-3句话写一段亲切的${timeOfDay}问候语（中文），内容包括：`
 
   if (weatherData) {
     prompt += `\n- 提及今日天气概况（${weatherData}），给一句出行或穿衣小建议`
@@ -53,46 +63,52 @@ async function generateGreeting(
 function formatStocksHTML(quotes: StockQuoteItem[]): string {
   if (quotes.length === 0) return ''
 
-  const rows = quotes.map((q) => {
-    const name = escapeHtml(q.name || q.symbol)
-    const code = escapeHtml(q.symbol.replace(/^(sh|sz|hk)/, ''))
-    const price = q.price?.toFixed(2) ?? '--'
+  const rows = quotes
+    .map((q, i) => {
+      const name = escapeHtml(q.name || q.symbol)
+      const code = escapeHtml(q.symbol.replace(/^(sh|sz|hk)/, ''))
+      const price = q.price?.toFixed(2) ?? '--'
 
-    const changeVal = q.change ?? 0
-    const changeStr =
-      q.change != null
-        ? `${changeVal > 0 ? '+' : ''}${changeVal.toFixed(2)}`
-        : '--'
-    const changeColor =
-      changeVal > 0 ? '#ef4444' : changeVal < 0 ? '#22c55e' : '#94a3b8'
+      const changeVal = q.change ?? 0
+      const changeStr =
+        q.change != null
+          ? `${changeVal > 0 ? '+' : ''}${changeVal.toFixed(2)}`
+          : '--'
+      const changeColor =
+        changeVal > 0 ? '#dc2626' : changeVal < 0 ? '#059669' : '#9ca0ab'
 
-    const pctVal = q.changePct ?? 0
-    const pctStr =
-      q.changePct != null
-        ? `${pctVal > 0 ? '+' : ''}${pctVal.toFixed(2)}%`
-        : '--'
-    const pctColor =
-      pctVal > 0 ? '#ef4444' : pctVal < 0 ? '#22c55e' : '#94a3b8'
+      const pctVal = q.changePct ?? 0
+      const pctStr =
+        q.changePct != null
+          ? `${pctVal > 0 ? '+' : ''}${pctVal.toFixed(2)}%`
+          : '--'
+      const pctColor =
+        pctVal > 0 ? '#dc2626' : pctVal < 0 ? '#059669' : '#9ca0ab'
 
-    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
-      <td style="padding:8px 6px;font-size:14px">${name}</td>
-      <td style="padding:8px 6px;font-size:12px;color:#94a3b8">${code}</td>
-      <td style="padding:8px 6px;font-size:14px;text-align:right">${price}</td>
-      <td style="padding:8px 6px;font-size:13px;text-align:right;color:${changeColor}">${changeStr}</td>
-      <td style="padding:8px 6px;font-size:13px;text-align:right;color:${pctColor}">${pctStr}</td>
-    </tr>`
-  }).join('')
+      const stripeBg = i % 2 === 1 ? 'background-color:#fafaf7;' : ''
 
-  return `<div style="background-color:#1e293b;background-image:linear-gradient(135deg,#1e293b,#334155);color:#e2e8f0;padding:20px;border-radius:10px;margin:20px 0">
-    <h2 style="margin:0 0 12px">&#x1F4C8; 今日自选股行情</h2>
-    <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
+      return `<tr style="border-bottom:1px solid #eeece6;${stripeBg}">
+        <td style="padding:10px 12px;font-size:14px;font-weight:500;color:#1c1c24">${name}</td>
+        <td style="padding:10px 12px;font-size:12px;color:#9ca0ab">${code}</td>
+        <td style="padding:10px 12px;font-size:14px;font-weight:500;text-align:right;color:#1c1c24">${price}</td>
+        <td style="padding:10px 12px;font-size:13px;text-align:right;font-weight:500;color:${changeColor}">${changeStr}</td>
+        <td style="padding:10px 12px;font-size:13px;text-align:right;font-weight:500;color:${pctColor}">${pctStr}</td>
+      </tr>`
+    })
+    .join('')
+
+  return `<div style="background:#ffffff;border:1px solid #e8e5df;border-radius:8px;margin-bottom:12px">
+    <div style="padding:20px 24px 0">
+      <h2 style="margin:0;font-size:15px;font-weight:600;color:#5c6ac4">&#x1F4C8; 今日自选股行情</h2>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:16px">
       <thead>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.2)">
-          <th style="padding:6px;text-align:left;font-size:12px;color:#94a3b8">股票名称</th>
-          <th style="padding:6px;text-align:left;font-size:12px;color:#94a3b8">代码</th>
-          <th style="padding:6px;text-align:right;font-size:12px;color:#94a3b8">最新价</th>
-          <th style="padding:6px;text-align:right;font-size:12px;color:#94a3b8">涨跌额</th>
-          <th style="padding:6px;text-align:right;font-size:12px;color:#94a3b8">涨跌幅</th>
+        <tr style="border-bottom:2px solid #eeece6">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:500;color:#9ca0ab;letter-spacing:0.5px">股票名称</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:500;color:#9ca0ab;letter-spacing:0.5px">代码</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:500;color:#9ca0ab;letter-spacing:0.5px">最新价</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:500;color:#9ca0ab;letter-spacing:0.5px">涨跌额</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:500;color:#9ca0ab;letter-spacing:0.5px">涨跌幅</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -104,6 +120,7 @@ export interface BriefingConfig {
   id: string
   userId: string
   email: string
+  pushHour: number
   city: string | null
   newsTopics: string | null
   user: { apiKey: string | null }
@@ -176,34 +193,50 @@ export async function generateAndSendBriefing(
     weekday: 'long',
   })
 
-  const greeting = await generateGreeting(apiKey, weatherData, filteredNews.length, config.newsTopics)
+  const greeting = await generateGreeting(apiKey, weatherData, filteredNews.length, config.newsTopics, config.pushHour)
   const newsHTML = formatNewsHTML(filteredNews)
 
   const weatherHTML = weatherData
-    ? `<div style="background-color:#667eea;background-image:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:10px;margin:20px 0"><h2 style="margin:0 0 10px">&#x1F324; 今日天气</h2><p style="font-size:18px;margin:0">${escapeHtml(weatherData)}</p></div>`
+    ? `<div style="background:#ffffff;border:1px solid #e8e5df;border-top:3px solid #5c6ac4;border-radius:8px;padding:20px 24px;margin-bottom:12px">
+        <h2 style="margin:0 0 12px;font-size:15px;font-weight:600;color:#5c6ac4">&#x2600; 今日天气</h2>
+        <p style="margin:0;font-size:18px;font-weight:500;color:#1c1c24;line-height:1.6">${escapeHtml(weatherData)}</p>
+      </div>`
     : ''
 
-  const emptyNewsHTML = '<p style="color:#999;font-size:14px;text-align:center;padding:30px 0">暂无新闻，请稍后查看</p>'
+  const emptyNewsHTML = '<p style="color:#9ca0ab;font-size:14px;text-align:center;padding:40px 24px 30px;margin:0">暂无新闻，请稍后查看</p>'
 
-  const fullHTML = `<div lang="zh-CN" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#fff">
+  const fullHTML = `<div lang="zh-CN" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;max-width:600px;margin:0 auto;background-color:#f5f3ef;padding:20px 12px 30px">
     <style>
-      .news-link:hover { color: #3b82f6 !important; text-decoration: underline !important; }
+      .news-link:hover { color: #5c6ac4 !important; text-decoration: underline !important; }
     </style>
-    <header><h1 style="color:#333;border-bottom:3px solid #667eea;padding-bottom:10px">&#x1F4F0; 每日简报</h1></header>
-    <p style="color:#444;font-size:14px">${dateStr}</p>
-    <main>
-      ${greeting ? `<p style="font-size:16px;line-height:1.8;color:#444;margin:15px 0">${escapeHtml(greeting)}</p>` : ''}
-      ${weatherHTML}
-      ${stocksHTML}
-      <div style="box-shadow:0 2px 16px rgba(0,0,0,0.08);border-radius:12px;padding:20px 30px;margin:20px 0;background:#fff">
-        <div style="display:flex;align-items:center;border-bottom:1px solid #f0f2f5;padding-bottom:15px;margin-bottom:10px"><div style="width:6px;height:24px;background-color:#3b82f6;border-radius:4px;margin-right:12px"></div><h2 style="font-size:24px;font-weight:bold;color:#3b82f6;margin:0;letter-spacing:1px">精选新闻</h2></div>
-        ${newsHTML || emptyNewsHTML}
+
+    <!-- Header -->
+    <div style="background:#ffffff;border:1px solid #e8e5df;border-radius:8px;padding:28px 30px 22px;text-align:center;margin-bottom:12px">
+      <h1 style="margin:0;font-size:26px;font-weight:700;color:#1c1c24;letter-spacing:0.5px">&#x1F4F0; 每日简报</h1>
+      <p style="margin:10px 0 0;font-size:13px;color:#9ca0ab;letter-spacing:0.3px">${dateStr}</p>
+    </div>
+
+    <!-- Greeting -->
+    ${greeting ? `<div style="background:#eef0ff;border:1px solid #dde0f8;border-left:4px solid #5c6ac4;border-radius:6px;padding:20px 24px;margin-bottom:12px">
+      <p style="margin:0;font-size:15px;line-height:1.9;color:#433a5e">${escapeHtml(greeting)}</p>
+    </div>` : ''}
+
+    ${weatherHTML}
+    ${stocksHTML}
+
+    <!-- News -->
+    <div style="background:#ffffff;border:1px solid #e8e5df;border-top:3px solid #5c6ac4;border-radius:8px;margin-bottom:12px">
+      <div style="padding:20px 24px 0">
+        <h2 style="margin:0;font-size:15px;font-weight:600;color:#5c6ac4">&#x1F4F0; 精选新闻</h2>
+        <p style="margin:4px 0 0;font-size:12px;color:#9ca0ab">来自多个优质科技媒体</p>
       </div>
-    </main>
-    <footer>
-      <hr style="border:none;border-top:1px solid #eee;margin:30px 0">
-      <p style="color:#666;font-size:12px;text-align:center">本简报由 AI Life Agent 自动生成</p>
-    </footer>
+      ${newsHTML || emptyNewsHTML}
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:20px 12px 0">
+      <p style="margin:0;font-size:12px;color:#bcb8b0">本简报由 AI Life Agent 自动生成 &middot; 仅供参考</p>
+    </div>
   </div>`
 
   // 5. Send

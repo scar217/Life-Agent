@@ -98,12 +98,14 @@ export function formatNewsHTML(newsItems: NewsItem[]): string {
     const ariaLabel = `阅读 ${item.source} 新闻: ${item.title}`
     const isLast = i === items.length - 1
     html += `
-      <div style="padding:24px 0;border-bottom:${isLast ? 'none' : '1px dashed #e5e7eb'}">
-        <div style="display:flex;align-items:center;margin-bottom:8px;gap:12px">
-          <span style="background-color:#94a3b8;color:#fff;font-size:13px;padding:4px 14px;border-radius:20px;white-space:nowrap">${escapeHtml(item.source)}</span>
-          <a href="${safeLink}" aria-label="${escapeHtml(ariaLabel)}" class="news-link" style="font-size:18px;color:#1f2937;font-weight:500;text-decoration:none">${escapeHtml(item.title)}</a>
+      <div style="padding:18px 24px;border-bottom:${isLast ? 'none' : '1px solid #eeece6'}">
+        <div style="margin-bottom:6px">
+          <span style="display:inline-block;background-color:#f1f4f9;color:#64748b;font-size:12px;font-weight:500;padding:3px 10px;border-radius:4px;white-space:nowrap;vertical-align:middle">${escapeHtml(item.source)}</span>
         </div>
-        <a href="${safeLink}" class="news-link" style="font-size:13px;color:#94a3b8;text-decoration:none">点击查看详情 →</a>
+        <a href="${safeLink}" aria-label="${escapeHtml(ariaLabel)}" class="news-link" style="font-size:16px;color:#1c1c24;font-weight:500;text-decoration:none;line-height:1.5;display:inline-block;margin-bottom:6px">${escapeHtml(item.title)}</a>
+        <div>
+          <a href="${safeLink}" class="news-link" style="font-size:12px;color:#9ca0ab;text-decoration:none">阅读详情 &rarr;</a>
+        </div>
       </div>`
   }
   return html

@@ -27,7 +27,7 @@ export function MessageList() {
   const isLoadingMessages = useChatStore((s) => s.isLoadingMessages)
   const streamingMessageId = useChatStore((s) => s.streamingMessageId)
   
-  // 获取流式消息的内容长度，用于触发滚动
+  // 获取流式消息的内容长度（计算content和thinking总长度），用于触发滚动
   const streamingContentLength = useChatStore((s) => {
     if (!s.streamingMessageId) return 0
     const msg = s.messages.find(m => m.id === s.streamingMessageId)
@@ -53,9 +53,17 @@ export function MessageList() {
   }, [messages])
   
   // TanStack Virtual 配置
+  // 初始化虚拟滚动，组件只会渲染当前视口内可见的元素。
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => scrollContainerRef.current,
+    // 动态高度预估：根据消息类型进行判断
+    /**
+     * 包含代码块预估 300px，
+     * AI 思考块预估 250px，
+     * 用户短消息预估 80px，
+     * 默认 150px。
+     */
     estimateSize: (index) => {
       const msg = messages[index]
       if (!msg) return 100
@@ -64,6 +72,8 @@ export function MessageList() {
       if (msg.role === 'user') return 80
       return 150
     },
+    // 缓冲渲染，
+    // 意味着在视口上下方会额外预渲染 3 个元素，保证用户快速滑动时的视觉平滑度。
     overscan: 3,
   })
   
@@ -168,7 +178,7 @@ export function MessageList() {
     scrollToBottom()
   }, [streamingContentLength, streamingMessageId, userScrolledUp, scrollToBottom])
   
-  // 空状态
+  // 空状态渲染：没有消息且不在加载发送中
   if (messages.length === 0 && !isSendingMessage && !isLoadingMessages) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -180,13 +190,15 @@ export function MessageList() {
       </div>
     )
   }
-
+  // 非空状态渲染：存在消息 
   return (
+    // 虚拟滚动的视口区域
     <div
-      ref={scrollContainerRef}
+      ref={scrollContainerRef} // 将DOM对象传递给 TanStack Virtual
       className="flex-1 overflow-y-auto custom-scrollbar-auto"
-      style={{ overflowAnchor: 'auto' }}
+      style={{ overflowAnchor: 'auto'}}
     >
+    {/* 虚拟滚动的内容区域 */}
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
@@ -194,6 +206,8 @@ export function MessageList() {
         }}
         className="mx-auto max-w-3xl px-6 py-6"
       >
+        
+        {/* 遍历列表中的数据 */}
         {virtualItems.map((virtualItem) => {
           const message = messages[virtualItem.index]
           
@@ -203,6 +217,7 @@ export function MessageList() {
           }
 
           return (
+            // 虚拟消息项
             <div
               key={`${virtualItem.index}-${message.id}`}
               data-index={virtualItem.index}
@@ -215,10 +230,12 @@ export function MessageList() {
                 transform: `translateY(${virtualItem.start}px)`,
               }}
             >
+              {/* 真实渲染消息的容器 */}
               <ChatMessage messageId={message.id} />
             </div>
           )
         })}
+
       </div>
     </div>
   )

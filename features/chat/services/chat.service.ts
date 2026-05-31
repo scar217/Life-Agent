@@ -223,7 +223,7 @@ export const ChatService = {
     try {
       // 创建 AbortController 用于中断
       streamAbortController = new AbortController()
-
+      // 向Nextjs发起对话请求
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -314,11 +314,14 @@ export const ChatService = {
           const s = useChatStore.getState()
 
           if (data.type === 'thinking' && data.content) {
+            // phase阶段没有更新到 thinking,则更新
             if (s.streamingPhase !== 'thinking') {
               s.startStreaming(messageId, 'thinking')
+              // ChatMessageUI 用它判断"这条消息该用哪种模式渲染
               s.transitionPhase(messageId, { type: 'START_THINKING' })
               s.updateMessage(messageId, { displayState: 'streaming' })
             }
+            // 添加到StreamBuffer
             thinkingBuffer.append(data.content)
           } else if (data.type === 'answer' && data.content) {
             const sanitized = sanitizeAssistantChunk(data.content)

@@ -257,6 +257,7 @@ export async function shareConversation(
       },
     })
 
+    // 开发环境URL：http://localhost:3000
     const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/share/${shareToken}`
 
     await audit({

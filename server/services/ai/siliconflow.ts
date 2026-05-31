@@ -7,7 +7,9 @@
 import { getModelById } from '@/features/chat/constants/models'
 
 const SILICONFLOW_API_URL = 'https://api.siliconflow.cn/v1/chat/completions'
+// 设置最大等待时间
 const REQUEST_TIMEOUT_MS = 120000
+// 设置最大重试次数
 const MAX_RETRIES = 2
 
 export interface ChatMessage {
@@ -67,9 +69,11 @@ export async function createChatCompletion(
 
   let lastError: unknown = null
 
+  // 最大重试
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     // 创建一个 AbortController 实例，用于在请求超时后终止请求
     const controller = new AbortController()
+    // 设置定时器，到达最大等待时间终止请求
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
     try {
@@ -93,6 +97,7 @@ export async function createChatCompletion(
       if (!reader) {
         throw new Error('No stream available')
       }
+      // 返回 大模型返回的reader流
       return { reader }
     } catch (error) {
       lastError = error
@@ -112,6 +117,7 @@ export async function createChatCompletion(
 
       const delayMs = 800 * attempt
       console.warn(`[SiliconFlow] Request failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${delayMs}ms: ${message}`)
+      // 设置等待时间，结束后重新发起
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     } finally {
       clearTimeout(timer)
