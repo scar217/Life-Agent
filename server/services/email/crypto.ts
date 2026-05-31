@@ -6,7 +6,10 @@ const IV_LENGTH = 16
 function getKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY
   if (!key) {
-    console.warn('[EmailCrypto] ENCRYPTION_KEY not set, using fallback — credentials stored as plaintext')
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[EmailCrypto] ENCRYPTION_KEY is required in production')
+    }
+    console.warn('[EmailCrypto] ENCRYPTION_KEY not set, using fallback — do not use in production')
     return crypto.scryptSync('email-tool-fallback-key-do-not-use-in-production', 'salt', 32)
   }
   if (key.length === 64) return Buffer.from(key, 'hex')

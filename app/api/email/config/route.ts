@@ -4,6 +4,21 @@ import { EmailConfigRepository } from '@/server/repositories/email-config.reposi
 import { encryptCredential } from '@/server/services/email/crypto'
 import * as nodemailer from 'nodemailer'
 
+function isPrivateHost(host: string): boolean {
+  // IPv4 private/loopback ranges
+  const privatePatterns = [
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^0\./,
+    /^169\.254\./,
+  ]
+  // IPv6 loopback
+  if (host === '::1' || host === 'localhost') return true
+  return privatePatterns.some((p) => p.test(host))
+}
+
 export async function GET() {
   const userId = await getCurrentUserId()
   const config = await EmailConfigRepository.findByUserId(userId)
@@ -48,8 +63,12 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const _userId = await getCurrentUserId()
+  await getCurrentUserId()
   const body = await req.json()
+
+  if (isPrivateHost(body.imapHost || '') || isPrivateHost(body.smtpHost || '')) {
+    return NextResponse.json({ error: '不允许连接到内网地址' }, { status: 400 })
+  }
 
   const results: { imap: string; smtp: string } = { imap: 'fail', smtp: 'fail' }
 
