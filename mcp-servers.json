@@ -13,7 +13,6 @@
     "email": {
       "command": "npx",
       "args": [
-        "-y",
         "tsx",
         "server/services/tools/email-mcp-server/index.ts"
       ]
