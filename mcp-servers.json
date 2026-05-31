@@ -9,6 +9,14 @@
       "env": {
         "AMAP_MAPS_API_KEY": "252b595b9c2f7d1a68656c661bf9bc09"
       }
+    },
+    "email": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "server/services/tools/email-mcp-server/index.ts"
+      ]
     }
   }
 }

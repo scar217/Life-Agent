@@ -57,6 +57,14 @@ async function initTools(): Promise<void> {
     const existingNames = new Set(toolRegistry.getAll().map((t) => t.name))
     await mcpManager.connectAndRegister(toolRegistry, existingNames)
   }
+
+  // 包装 email 工具：注入解密后的 IMAP/SMTP 凭据
+  try {
+    const { wrapEmailTools } = await import('./email-tools-wrapper')
+    wrapEmailTools(toolRegistry)
+  } catch (err) {
+    console.warn('[Tools] Email wrapper not available:', err instanceof Error ? err.message : String(err))
+  }
 }
 
 /**

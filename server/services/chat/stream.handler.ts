@@ -277,6 +277,10 @@ async function startToolExecution(
     args._userId = args._userId || userId
   }
 
+  if (name.startsWith('email_')) {
+    args._userId = args._userId || userId
+  }
+
   try {
     if (name === 'generate_image') {
       // 图片生成：带进度回调
