@@ -1,0 +1,93 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentUserId } from '@/server/auth/utils'
+import { EmailConfigRepository } from '@/server/repositories/email-config.repository'
+import { encryptCredential } from '@/server/services/email/crypto'
+import * as nodemailer from 'nodemailer'
+
+export async function GET() {
+  const userId = await getCurrentUserId()
+  const config = await EmailConfigRepository.findByUserId(userId)
+  if (!config) return NextResponse.json(null)
+  return NextResponse.json({
+    ...config,
+    imapPassword: '****',
+    smtpPassword: '****',
+  })
+}
+
+export async function PUT(req: NextRequest) {
+  const userId = await getCurrentUserId()
+  const body = await req.json()
+
+  const existing = await EmailConfigRepository.findByUserId(userId)
+
+  const data = {
+    imapHost: body.imapHost || '',
+    imapPort: body.imapPort || 993,
+    imapUser: body.imapUser || '',
+    imapPassword:
+      body.imapPassword && body.imapPassword !== '****'
+        ? encryptCredential(body.imapPassword)
+        : existing?.imapPassword || '',
+    smtpHost: body.smtpHost || '',
+    smtpPort: body.smtpPort || 465,
+    smtpUser: body.smtpUser || '',
+    smtpPassword:
+      body.smtpPassword && body.smtpPassword !== '****'
+        ? encryptCredential(body.smtpPassword)
+        : existing?.smtpPassword || '',
+    emailAddress: body.emailAddress || '',
+  }
+
+  const config = await EmailConfigRepository.upsert(userId, data)
+  return NextResponse.json({
+    ...config,
+    imapPassword: '****',
+    smtpPassword: '****',
+  })
+}
+
+export async function POST(req: NextRequest) {
+  const _userId = await getCurrentUserId()
+  const body = await req.json()
+
+  const results: { imap: string; smtp: string } = { imap: 'fail', smtp: 'fail' }
+
+  // Test SMTP
+  if (body.smtpHost && body.smtpUser && body.smtpPassword) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: body.smtpHost,
+        port: body.smtpPort || 465,
+        secure: (body.smtpPort || 465) === 465,
+        auth: { user: body.smtpUser, pass: body.smtpPassword },
+        connectionTimeout: 10000,
+      })
+      await transporter.verify()
+      results.smtp = 'ok'
+    } catch (e) {
+      results.smtp = e instanceof Error ? e.message : 'fail'
+    }
+  }
+
+  // Test IMAP
+  if (body.imapHost && body.imapUser && body.imapPassword) {
+    try {
+      const { ImapFlow } = await import('imapflow')
+      const client = new ImapFlow({
+        host: body.imapHost,
+        port: body.imapPort || 993,
+        secure: true,
+        auth: { user: body.imapUser, pass: body.imapPassword },
+      })
+      await client.connect()
+      await client.list()
+      await client.logout()
+      results.imap = 'ok'
+    } catch (e) {
+      results.imap = e instanceof Error ? e.message : 'fail'
+    }
+  }
+
+  return NextResponse.json(results)
+}
