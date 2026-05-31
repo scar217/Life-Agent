@@ -11,9 +11,10 @@
       }
     },
     "email": {
-      "command": "npx",
+      "command": "node",
       "args": [
-        "tsx",
+        "--import",
+        "tsx/esm",
         "server/services/tools/email-mcp-server/index.ts"
       ]
     }
