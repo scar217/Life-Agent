@@ -31,6 +31,7 @@ export default function EmailSettingsPage() {
     fetch('/api/email/config')
       .then((res) => {
         if (res.status === 401) { router.push('/auth/signin'); return null }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()
       })
       .then((data) => {

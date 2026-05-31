@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
-import { Info, UserCircle2, LogOut, Palette, Newspaper, TrendingUp } from 'lucide-react'
+import { Info, UserCircle2, LogOut, Palette, Newspaper, TrendingUp, Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ModelSelector } from '@/features/chat/components/ModelSelector'
@@ -142,6 +142,12 @@ export function Header() {
             <DropdownMenuItem onClick={() => router.push('/settings/briefing')} className="cursor-pointer">
               <Newspaper className="mr-2 h-4 w-4" />
               <span>简报设置</span>
+            </DropdownMenuItem>
+
+            {/* 邮箱配置 */}
+            <DropdownMenuItem onClick={() => router.push('/settings/email')} className="cursor-pointer">
+              <Mail className="mr-2 h-4 w-4" />
+              <span>邮箱配置</span>
             </DropdownMenuItem>
 
             {/* 自选股管理 */}

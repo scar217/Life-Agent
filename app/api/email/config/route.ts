@@ -20,14 +20,21 @@ function isPrivateHost(host: string): boolean {
 }
 
 export async function GET() {
-  const userId = await getCurrentUserId()
-  const config = await EmailConfigRepository.findByUserId(userId)
-  if (!config) return NextResponse.json(null)
-  return NextResponse.json({
-    ...config,
-    imapPassword: '****',
-    smtpPassword: '****',
-  })
+  try {
+    const userId = await getCurrentUserId()
+    const config = await EmailConfigRepository.findByUserId(userId)
+    if (!config) return NextResponse.json(null)
+    return NextResponse.json({
+      ...config,
+      imapPassword: '****',
+      smtpPassword: '****',
+    })
+  } catch (e) {
+    if (e instanceof Error && e.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    throw e
+  }
 }
 
 export async function PUT(req: NextRequest) {
