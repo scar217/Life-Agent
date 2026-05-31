@@ -11,16 +11,17 @@ export async function executeEmailForward(
     await client.mailboxOpen('INBOX')
     const fetched = await client.fetchOne(`${params.messageId}`, { envelope: true, source: true }, { uid: true })
 
-    if (!fetched) return JSON.stringify({ success: false, error: '原始邮件未找到' })
+    if (!fetched || !fetched.envelope) return JSON.stringify({ success: false, error: '原始邮件未找到' })
 
-    const subject = fetched.envelope.subject.startsWith('Fwd:')
-      ? fetched.envelope.subject
-      : `Fwd: ${fetched.envelope.subject}`
+    const envelope = fetched.envelope
+    const subject = (envelope.subject || '').startsWith('Fwd:')
+      ? envelope.subject!
+      : `Fwd: ${envelope.subject || ''}`
 
     const body = `<p>---------- 转发的邮件 ----------</p>
-<p>发件人: ${fetched.envelope.from?.[0]?.name || ''} &lt;${fetched.envelope.from?.[0]?.address || ''}&gt;</p>
-<p>日期: ${fetched.envelope.date?.toISOString() || ''}</p>
-<p>主题: ${fetched.envelope.subject}</p>
+<p>发件人: ${envelope.from?.[0]?.name || ''} &lt;${envelope.from?.[0]?.address || ''}&gt;</p>
+<p>日期: ${envelope.date?.toISOString() || ''}</p>
+<p>主题: ${envelope.subject || ''}</p>
 <hr />
 <pre>${fetched.source?.toString().substring(0, 10000) || ''}</pre>`
 

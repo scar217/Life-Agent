@@ -37,7 +37,7 @@ export async function fetchEmails(
   if (mailbox.exists === 0) return []
 
   const uids = await client.search(searchCriteria)
-  if (uids.length === 0) return []
+  if (!uids || uids.length === 0) return []
 
   const targetUids = uids.slice(-Math.min(limit, uids.length))
 
@@ -47,13 +47,14 @@ export async function fetchEmails(
     { uid: true, envelope: true, bodyStructure: true, flags: true },
     { uid: true }
   )) {
+    const env = msg.envelope
     const preview = await fetchPreview(client, msg.uid)
     messages.push({
       uid: msg.uid,
-      subject: msg.envelope.subject,
-      from: msg.envelope.from?.[0] ? `${msg.envelope.from[0].name || ''} <${msg.envelope.from[0].address}>` : '',
-      date: msg.envelope.date?.toISOString() || '',
-      flags: msg.flags.map((f) => String(f)),
+      subject: env?.subject || '',
+      from: env?.from?.[0] ? `${env.from[0].name || ''} <${env.from[0].address}>` : '',
+      date: env?.date ? env.date.toISOString() : '',
+      flags: [...(msg.flags || [])].map((f) => String(f)),
       preview,
     })
   }
