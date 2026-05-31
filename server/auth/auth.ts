@@ -101,7 +101,7 @@ export const authOptions: NextAuthOptions = {
 
       // 检查账号是否已关联
       const accountAlreadyLinked = existingUser.accounts.some(
-        (acc) => acc.provider === account?.provider
+        (acc: { provider: string }) => acc.provider === account?.provider
       )
       if (accountAlreadyLinked) return true
 

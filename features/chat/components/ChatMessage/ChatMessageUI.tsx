@@ -27,6 +27,32 @@ import type { StockListItem } from './StockListCard'
 /**
  * 搜索状态组件 - 简洁风格，类似 Perplexity
  */
+/** MCP 工具通用渲染：只显示运行状态，不展示 JSON 结果 */
+function DefaultToolInvocation({ invocation }: { invocation: ToolInvocation }) {
+  if (invocation.state === 'running' || invocation.state === 'pending') {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <span className="font-medium">{invocation.name}</span>
+        <span>执行中...</span>
+      </div>
+    )
+  }
+
+  if (invocation.state === 'failed') {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+        <XCircle className="h-3.5 w-3.5" />
+        <span className="font-medium">{invocation.name}</span>
+        <span>执行失败</span>
+      </div>
+    )
+  }
+
+  // 完成状态不渲染，AI 已把结果融入回答中
+  return null
+}
+
 function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const sources = invocation.result?.sources as SearchSource[] | undefined
@@ -218,7 +244,8 @@ function ToolInvocationItem({
     return <WebSearchStatus invocation={invocation} />
   }
 
-  return null
+  // MCP 工具 / 未知工具通用 fallback
+  return <DefaultToolInvocation invocation={invocation} />
 }
 
 /**
@@ -285,7 +312,8 @@ function ToolResultItem({ result }: { result: ToolResult }) {
       </div>
     )
   }
-  
+
+  // MCP 工具 / 未知工具结果：不渲染，AI 已把结果融入回答中
   return null
 }
 

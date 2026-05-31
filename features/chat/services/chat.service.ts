@@ -334,15 +334,22 @@ export const ChatService = {
             }
             answerBuffer.append(sanitized)
           } else if (data.type === 'tool_call') {
-            // 工具调用开始
+            // 工具调用开始（原生工具 + MCP 工具）
             const toolCallId = data.toolCallId || nanoid()
-            
+            // 优先使用通用 args，fallback 到现有特定字段
+            const toolArgs = data.args || {
+              query: data.query,
+              prompt: data.prompt,
+              action: data.action,
+              symbols: data.symbols,
+            }
+
             // 状态机：转换到 tool_calling
             s.transitionPhase(messageId, {
               type: 'START_TOOL_CALL',
               toolCallId,
               name: data.name || 'unknown',
-              args: { query: data.query, prompt: data.prompt },
+              args: toolArgs,
             })
 
             const msg = s.messages.find((m) => m.id === messageId)
@@ -351,12 +358,7 @@ export const ChatService = {
               toolCallId,
               name: data.name || 'unknown',
               state: 'running' as const,
-              args: {
-                query: data.query,
-                prompt: data.prompt,
-                action: data.action,
-                symbols: data.symbols,
-              },
+              args: toolArgs,
             }
             s.updateMessage(messageId, {
               toolInvocations: [...invocations, newInvocation],
@@ -374,16 +376,26 @@ export const ChatService = {
               s.updateToolProgress(messageId, data.toolCallId, data.progress, data.estimatedTime)
             }
           } else if (data.type === 'tool_result') {
-            // 状态机：工具完成
+            // 工具结果（原生工具 + MCP 工具）
+            // 优先使用通用 result，fallback 到现有特定字段
+            const toolResult = data.result || {
+              success: data.success ?? false,
+              imageUrl: data.imageUrl,
+              resultCount: data.resultCount,
+              sources: data.sources,
+              width: data.width,
+              height: data.height,
+              action: data.action,
+              items: data.items,
+              sectors: data.sectors,
+              gainers: data.gainers,
+            }
+
             s.transitionPhase(messageId, {
               type: 'TOOL_COMPLETE',
               toolCallId: data.toolCallId || '',
               success: data.success ?? false,
-              result: {
-                imageUrl: data.imageUrl,
-                resultCount: data.resultCount,
-                sources: data.sources,
-              },
+              result: toolResult,
             })
 
             const msg = s.messages.find((m) => m.id === messageId)
@@ -396,18 +408,7 @@ export const ChatService = {
                 return {
                   ...inv,
                   state: data.success ? ('completed' as const) : ('failed' as const),
-                  result: {
-                    success: data.success ?? false,
-                    imageUrl: data.imageUrl,
-                    resultCount: data.resultCount,
-                    sources: data.sources,
-                    width: data.width,
-                    height: data.height,
-                    action: data.action,
-                    items: data.items,
-                    sectors: data.sectors,
-                    gainers: data.gainers,
-                  },
+                  result: { success: data.success ?? false, ...toolResult },
                 }
               }
               return inv

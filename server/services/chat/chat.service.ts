@@ -56,8 +56,6 @@ export async function handleChatRequest(
     model = 'zai-org/GLM-4.6',
     enableThinking = false,
     thinkingBudget = 4096,
-    _enableWebSearch = true,
-    enableImageGeneration: _enableImageGeneration = false,
     userMessageId,
     aiMessageId,
     attachments,
@@ -77,24 +75,8 @@ export async function handleChatRequest(
   // - web_search: 需要用户手动开启，始终可用（AI 自动判断何时调用）
   // - get_weather: 查询天气，始终可用（AI 自动判断何时调用）
   // - generate_image: 始终可用（AI 自动判断何时调用）
-  const enabledTools = []
-  if (toolRegistry.has('web_search')) {
-    enabledTools.push(toolRegistry.get('web_search')!)
-  }
-
-  if (toolRegistry.has('get_weather')) {
-    enabledTools.push(toolRegistry.get('get_weather')!)
-  }
-
-  // 生图工具始终可用，让 AI 自己判断何时调用
+  const enabledTools = toolRegistry.getAll()
   const imageAvailable = toolRegistry.has('generate_image')
-  if (imageAvailable) {
-    enabledTools.push(toolRegistry.get('generate_image')!)
-  }
-
-  if (toolRegistry.has('get_stock_info')) {
-    enabledTools.push(toolRegistry.get('get_stock_info')!)
-  }
   const tools = enabledTools.length > 0
     ? enabledTools.map(tool => ({
         type: 'function' as const,

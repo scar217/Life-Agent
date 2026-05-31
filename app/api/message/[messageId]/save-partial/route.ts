@@ -5,7 +5,7 @@
  * POST /api/message/[messageId]/save-partial
  */
 
-import { Prisma } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { getCurrentUserId } from '@/server/auth/utils'
 import { MessageRepository } from '@/server/repositories/message.repository'
 
@@ -52,7 +52,7 @@ export async function POST(
     return Response.json({ success: true })
   } catch (error) {
     // 消息可能已被用户重试/编辑操作删除（P2025），视为幂等成功
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
       return Response.json({ success: true, skipped: true })
     }
 

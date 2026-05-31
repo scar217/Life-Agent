@@ -27,7 +27,7 @@ export async function PUT(req: Request) {
     const body = await req.json()
     const parsed = configSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 })
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
     const config = await BriefingRepository.upsert(userId, parsed.data)
     return NextResponse.json(config)

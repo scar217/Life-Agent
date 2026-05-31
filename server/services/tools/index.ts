@@ -8,6 +8,7 @@ import { createImageGenerationTool } from './image-generation'
 import { isSiliconFlowS3Available } from '@/server/services/image/network-probe'
 import { createWeatherTool } from './get-weather'
 import { createStockTool } from './stock-quote'
+import { MCPClientManager } from './mcp-client'
 
 // 创建全局工具注册表
 const toolRegistry = new ToolRegistry()
@@ -48,6 +49,14 @@ async function initTools(): Promise<void> {
 
   // 注册股票查询工具（使用东方财富公开 API，无需 key）
   toolRegistry.register(createStockTool())
+
+  // === MCP Server 集成（增量） ===
+  const mcpManager = new MCPClientManager('mcp-servers.json')
+  mcpManager.loadConfig()
+  if (mcpManager.hasConfig()) {
+    const existingNames = new Set(toolRegistry.getAll().map((t) => t.name))
+    await mcpManager.connectAndRegister(toolRegistry, existingNames)
+  }
 }
 
 /**

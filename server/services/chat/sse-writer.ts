@@ -56,8 +56,10 @@ export class SSEWriter {
       toolCallId: tc.id,
       name: tc.function.name,
       sessionId: this._sessionId,
+      args,
     }
 
+    // 工具特定字段（向后兼容前端现有渲染组件）
     if (tc.function.name === 'web_search') event.query = args.query
     if (tc.function.name === 'get_weather') event.city = args.city
     if (tc.function.name === 'generate_image') event.prompt = args.prompt
@@ -82,9 +84,11 @@ export class SSEWriter {
       toolCallId: result.toolCallId,
       name: result.name,
       success: result.success,
+      result: parsed,
       sessionId: this._sessionId,
     }
 
+    // 工具特定字段（向后兼容前端现有渲染组件）
     if (result.name === 'web_search') {
       event.resultCount = parsed.resultCount || 0
       event.sources = parsed.sources || []

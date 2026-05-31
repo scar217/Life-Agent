@@ -282,6 +282,10 @@ export interface SSEData {
   sectors?: Array<Record<string, unknown>>
   /** 涨幅榜列表（get_stock_info tool_result 事件） */
   gainers?: Array<Record<string, unknown>>
+  /** 通用工具参数（tool_call 事件，用于 MCP 和未知工具） */
+  args?: Record<string, unknown>
+  /** 通用工具结果（tool_result 事件，用于 MCP 和未知工具） */
+  result?: Record<string, unknown>
 }
 
 /**
