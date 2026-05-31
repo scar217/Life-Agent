@@ -38,6 +38,8 @@ model User {
   watchlist     StockWatchlist[]
   /// 每日简报配置（一对一）
   briefingConfig BriefingConfig?
+  /// 邮箱配置（一对一）
+  emailConfig    EmailConfig?
   @@index([email])
 }
 
@@ -240,6 +242,37 @@ model BriefingConfig {
   /// 每个用户仅一条配置
   @@unique([userId])
   @@index([pushHour, isEnabled])
+}
+
+/// 邮箱配置表（用户 IMAP/SMTP 配置）
+model EmailConfig {
+  id            String   @id @default(cuid())
+  /// 所属用户 ID
+  userId        String   @unique
+  /// 所属用户（级联删除）
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// IMAP 服务器地址
+  imapHost      String
+  /// IMAP 端口，默认 993
+  imapPort      Int      @default(993)
+  /// IMAP 账号
+  imapUser      String
+  /// IMAP 密码（AES-256-GCM 加密后存储）
+  imapPassword  String
+  /// SMTP 服务器地址
+  smtpHost      String
+  /// SMTP 端口，默认 465
+  smtpPort      Int      @default(465)
+  /// SMTP 账号
+  smtpUser      String
+  /// SMTP 密码（AES-256-GCM 加密后存储）
+  smtpPassword  String
+  /// 用户邮箱地址
+  emailAddress  String
+  /// 创建时间
+  createdAt     DateTime @default(now())
+  /// 更新时间
+  updatedAt     DateTime @updatedAt
 }
 
 /// 自选股关注表（用户→股票代码映射）
